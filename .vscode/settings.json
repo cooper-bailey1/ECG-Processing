@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "stm32l432xx.h": "c",
+        "core_cm4.h": "c"
+    }
+}
