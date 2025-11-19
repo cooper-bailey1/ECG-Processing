@@ -223,7 +223,19 @@ void task_main_loop (void *pvParameters) {
 	analogWrite (A3, sample>>4);
 
 	// 60Hz notch filter.
-	//...
+	float xn = sample / 4096.0;
+	float notch_output = xn;
+
+	//Iterate filter and state (yn = bi*xn*mi)
+	for (int i = 0; i < N_BIQUAD_SECS; i++) {
+	    notch_output = biquad_filter(&BIQUAD_FILTER[i], &g_biquad_state[i], notch_output);
+	}
+
+	// Safety bounds
+	xn *= 255.0;
+	if (notch_output > 255) notch_output = 255;
+	if (notch_output < 0) notch_output = 0;
+	analogWrite(A4, xn);
 
 	// 5 Hz highpass, to remove baseline drift and flatten T wave.
 	// 5Hz = 100 samples @ 2ms/sample. Note that this also turn the input
