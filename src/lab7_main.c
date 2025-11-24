@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include "lib_ee152.h"
+#include <stdlib.h>
 
 ///////////////////////////////////////////////////////////
 // Biquad filtering.
@@ -235,44 +236,56 @@ void task_main_loop (void *pvParameters) {
 	xn *= 255.0;
 	if (notch_output > 255) notch_output = 255;
 	if (notch_output < 0) notch_output = 0;
-	analogWrite(A4, xn);
-
+	
 	// 5 Hz highpass, to remove baseline drift and flatten T wave.
 	// 5Hz = 100 samples @ 2ms/sample. Note that this also turn the input
 	// into a zero-mean signal (otherwise, the absolute value later
 	// would be meaningless). 5 Hz = 100 samples.
-	// float hp_5Hz = ...
+	float hp_5Hz = notch_output - mov_avg (&moving_avg_5Hz, notch_output);
 
-	// // Absolute value, in case QRS is inverted
-	// float abs = ...
+	// Absolute value, in case QRS is inverted
+    if(hp_5Hz > 0)
+        hp_5Hz = hp_5Hz;
+    else 
+        hp_5Hz = -hp_5Hz;
+    float abs_val = hp_5Hz;
 
+    
 	// // Triangle-filter template match. The triangle is 20ms on each side,
 	// // which is 20 samples total width (10 samples on each side).
 	// // Keep a 20-sample buffer of 'abs' to help compute this.
-	// float ttm = ...
+	float ttm = mov_tri (&moving_tri, abs_val);
 
 	// // Ttm accentuates the R peak nicely, but also has some nasty
 	// // oscillations around Q and S. So use a 35Hz low-pass filter.
 	// // 35Hz is about 29ms; it cuts the height of ttm roughly in half and
 	// // widens it by about 2x, but smooths most of the oscillations.
-	// float lp35 = ...
+	float lp35 = mov_avg (&moving_avg_35Hz, ttm);
+
+    //analogWrite (A4, lp35 * 1279);	// Debug output.
 
 	// // Threshold computation: get the average & max of lp35 over
 	// // the last 2 cycles
-	// float thresh = ...
+    float thresh = mov_max(&moving_thresh_max, lp35);
 
-	// Add a lockout so we get one-cycle pulses. Lock for .25 sec, or
-	// 125 cycles
-        if (lock_count>0)	// In a potential R wave
+	// // Add a lockout so we get one-cycle pulses. Lock for .25 sec, or
+	// // 125 cycles
+    if (lock_count>0) {	// In a potential R wave
 	    --lock_count;
-	//...
-
+	}
+    if (lp35 > thresh && lock_count <= 0){
+    	lock_count = 125;
+    }
+	
 	// Build a GPIO output trigger that fires on the R falling edge, and
 	// lasts for 10 ticks (20ms).
 	if (lock_count==125)
 	    digitalWrite (D6, 1);
 	if (lock_count==115)
 	    digitalWrite (D6, 0);
+
+    
+    
     }
 }
 

@@ -1,8 +1,6 @@
 #include "lib_ee152.h"		// for ???
 #include "stm32l432xx.h"
 #include <stdint.h>
-
-
 ////////////////////////////////////////////////////
 // This portion of the file contains debug-related functions.
 //    -	analogWriteDbg (pin, val, offset, shift_rt_amt, when_to_start):
