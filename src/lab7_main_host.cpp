@@ -271,10 +271,12 @@ static int lock_count = 0;
 
 int main() {
     // Which file are we using?
-    //string folder = "./ECG_data";
+    //string folder = "./lab7_ProcessECG";
     //string file = "3electrode_joel_ecg_6_21_25.csv";
     //string file = "deena6.csv";
     //string file = "sam_trimmed_3x.csv";
+    //string file = "example_ecg.txt";
+    //analogRead_start(folder + "/" + file, 0);	// Channel 0 or 1.
     analogRead_start("example_ecg.txt", 1);	// Channel 0 or 1.
 
     // Initialize our various filters.
