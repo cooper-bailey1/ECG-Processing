@@ -1,3 +1,9 @@
+//	Efficient circular buffer for max of a large number of points.
+//	Each time you give it a new point, it returns the max of the most
+//	recent 1024 points.
+//	The trick is that it preprocesses each segment of 64 consecutive points,
+//	remembers the max among them, and then uses a true circular buffer of
+//	only 1024/64=16 points; each element of the circular buffer is that
 /* This is the main file used to explore ECGs and filtering for EE152.
  * It matches ECG_triangle2019.py in
  *	Dropbox/EE152_embedded/code_filtering_python.
@@ -227,28 +233,19 @@ static void mov_tri_init (Moving_tri *tri) {
 	// // Triangle-filter template match. The triangle is 20ms on each side,
 	// // which is 20 samples total width (10 samples on each side).
 	// // Keep a 20-sample buffer of 'abs' to help compute this.
-static float mov_tri (Moving_tri *tri, float input) {
-    // Store the new input in the circular buffer.
-    //tri->buf[tri->cur_idx] = input;
-    // Compute the triangle filter output.
-    //int idx_m10 = (tri->cur_idx + 10) % 20,
-    //idx_p10 = (tri->cur_idx + 10) % 20;
-    //result = (input - tri->buf[idx_m10]) * (input - tri->buf[idx_p10]);
-    //return (result);
 
+static float mov_tri (Moving_tri *tri, float input) {
     tri->buf[tri->cur_idx] = input;
 
-    // Offsets: i−10 and i+10
-    int idx_m10 = (tri->cur_idx + 21 - 10) % 21;
-    int idx_p10 = (tri->cur_idx + 10) % 21;
+    int idx_m10 = (tri->cur_idx + 20 - 10) % 20; // i-10
+    int idx_p10 = (tri->cur_idx + 10) % 20;      // i+10
 
     float result = (input - tri->buf[idx_m10]) *
                    (input - tri->buf[idx_p10]);
 
-    // Advance circular index
-    tri->cur_idx = (tri->cur_idx + 1) % 21;
+    tri->cur_idx = (tri->cur_idx + 1) % 20;
 
-    return result;
+    return result * 10;
 }
 
 ///////////////////////////////////////////////////////////
@@ -271,18 +268,25 @@ static int lock_count = 0;
 
 int main() {
     // Which file are we using?
-    //string folder = "./ECG_data";
+    string folder = "/h/cbaile07/EE152/lab7";
     //string file = "3electrode_joel_ecg_6_21_25.csv";
-    //string file = "deena6.csv";
+    string file = "example_ecg.txt";
     //string file = "sam_trimmed_3x.csv";
-    analogRead_start("example_ecg.txt", 1);	// Channel 0 or 1.
+    //analogRead_start("example_ecg.txt", 1);	// Channel 0 or 1.
+    analogRead_start(folder + "/" + file, 0);	// Channel 0 or 1.
+
+    //cout << "Using ECG data from "<<file<<endl;
 
     // Initialize our various filters.
     mov_avg_init (&moving_avg_5Hz, buf_5Hz, 100);
+    mov_avg_init (&moving_avg_35Hz, buf_35Hz, 14);
+    mov_avg_init (&moving_avg_thresh_2sec, buf_2sec, 1000);
     mov_tri_init (&moving_tri);
     moving_max_init (&moving_thresh_max);
     
-    LOG("sample\tnotch60\thp_5Hz\tttm\tlp35\tthresh_2s_avg\tthresh_2s_max\tthresh\tlock_count");
+
+    
+    LOG("sample\tnotch60\thp_5Hz\tabs_val\tttm\tlp35\tthresh_2s_avg\tthresh_2s_max\tthresh\tlock_count");
 
     for (int i=0; i<6000; ++i) {
 	int32_t sample = analogRead ();
@@ -359,7 +363,7 @@ int main() {
 // 	//     digitalWrite (D6, 0);
 //     }
 
-	LOG(sample<<'\t'<< notch60 <<'\t'<< hp_5Hz <<'\t'<< ttm <<'\t'<< lp35
+	LOG(sample<<'\t'<< notch60 <<'\t'<< hp_5Hz << '\t' << abs_val <<'\t'<< ttm <<'\t'<< lp35
 	    <<'\t'<< thresh_2s_avg<<'\t'<< thresh_2s_max <<'\t'<<thresh<<'\t'
 	    <<lock_count);
     }
