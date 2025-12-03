@@ -235,6 +235,7 @@ static void mov_tri_init (Moving_tri *tri) {
 	// // Keep a 20-sample buffer of 'abs' to help compute this.
 
 static float mov_tri (Moving_tri *tri, float input) {
+
     tri->buf[tri->cur_idx] = input;
 
     int idx_m10 = (tri->cur_idx + 20 - 10) % 20; // i-10
@@ -333,11 +334,13 @@ int main() {
 
 	// // Threshold computation: get the average & max of lp35 over
 	// // the last 2 cycles
-	float thresh =  mov_max(&moving_thresh_max, lp35);
+	// float thresh =  mov_max(&moving_thresh_max, lp35);
 
     float thresh_2s_avg = mov_avg (&moving_avg_thresh_2sec, lp35);
 
     float thresh_2s_max = mov_max(&moving_thresh_max, lp35);
+
+    float thresh = (thresh_2s_avg + thresh_2s_max) / 2;
 
 	// Add a lockout so we get one-cycle pulses. Lock for .25 sec, or
 	// 125 cycles
