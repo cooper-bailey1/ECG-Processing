@@ -1,4 +1,7 @@
 #import pdb; pdb.set_trace()
+import re
+import numpy as np
+import matplotlib.pyplot as plt
 
 # Globals used to build a data structure.
 #   * signal_names[] is a list of the names from line #1 of the main input
@@ -48,11 +51,12 @@ def plot_what_you_want():
     print("plotting...")
 
     #plot_signal("sample", 1, -2000)
-    #plot_signal("lp35")
-    plot_signal("thresh")
     #plot_signal("notch60")
-    #plot_signal("ttm")
     #plot_signal("abs_val")
+    #plot_signal("ttm")
+    #plot_signal("lp35")
+    #plot_signal("thresh")
+    
 
     n_pts = values[0].size
     x_axis = np.arange(n_pts, dtype=float) * .002

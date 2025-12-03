@@ -269,7 +269,7 @@ static int lock_count = 0;
 
 int main() {
     // Which file are we using?
-    string folder = "/h/cbaile07/EE152/lab7";
+    string folder = "/h/agalen01/ee152";
     //string file = "3electrode_joel_ecg_6_21_25.csv";
     string file = "example_ecg.txt";
     //string file = "sam_trimmed_3x.csv";
