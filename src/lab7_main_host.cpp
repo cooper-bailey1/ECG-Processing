@@ -230,23 +230,18 @@
 // }
 
 // // Triangle filter
-// 	// // Triangle-filter template match. The triangle is 20ms on each side,
-// 	// // which is 20 samples total width (10 samples on each side).
-// 	// // Keep a 20-sample buffer of 'abs' to help compute this.
-
 // static float mov_tri (Moving_tri *tri, float input) {
+
+//     int idx_p10 = (tri->cur_idx + 10) % 20;
+//     float tri_neg10 = tri->buf[idx_p10];  
+
+//     float result = (tri_neg10 - tri->buf[tri->cur_idx]) * (tri_neg10 - input);
 
 //     tri->buf[tri->cur_idx] = input;
 
-//     int idx_m10 = (tri->cur_idx + 20 - 10) % 20; // i-10
-//     int idx_p10 = (tri->cur_idx + 10) % 20;      // i+10
-
-//     float result = (input - tri->buf[idx_m10]) *
-//                    (input - tri->buf[idx_p10]);
-
 //     tri->cur_idx = (tri->cur_idx + 1) % 20;
 
-//     return result * 10;
+//     return result;
 // }
 
 // ///////////////////////////////////////////////////////////
@@ -272,6 +267,7 @@
 // static uint32_t last_beat_sample = 0;
 // static float bpm = 0.0f;
 // static float bpm_filt = 0.0f;   // smoothed BPM
+// bool test = false; 
 
 // int main() {
 //     // Which file are we using?
@@ -291,40 +287,30 @@
 //     mov_tri_init (&moving_tri);
 //     moving_max_init (&moving_thresh_max);
     
-
-//     LOG("sample\tnotch60\thp_5Hz\tabs_val\tttm\tlp35\tthresh_2s_avg\tthresh_2s_max\tthresh\tlock_count\tbpm");
-
+//     LOG("sample\tnotch60\thp_5Hz\tabs_val\tttm\tlp35\tthresh_2s_avg\tthresh_2s_max\tthresh\tlock_count\tbpm\tbeep");
 
 //     for (int i=0; i<6000; ++i) {
-// 	int32_t sample = analogRead ();
+// 	int32_t sample = analogRead();
 // 	if (sample == -1) break;
 
 // 	// 60Hz notch filter.
 //     // 	// 60Hz notch filter.
 // 	float xn = sample / 4096.0;
-// 	float notch_output = xn;
+//     float notch60 = xn;
 
 // 	//Iterate filter and state (yn = bi*xn*mi)
 // 	for (int i = 0; i < N_BIQUAD_SECS; i++) {
-// 	    notch_output = biquad_filter(&BIQUAD_FILTER[i], &g_biquad_state[i], notch_output);
+// 	    notch60 = biquad_filter(&BIQUAD_FILTER[i], &g_biquad_state[i], notch60);
 // 	}
-    
-// 	float notch60 = notch_output;
 
 // 	// 5 Hz highpass, to remove baseline drift and flatten T wave.
 // 	// 5Hz = 100 samples @ 2ms/sample. Note that this also turn the input
 // 	// into a zero-mean signal (otherwise, the absolute value later
 // 	// would be meaningless). 5 Hz = 100 samples.
-// 	float avg_5Hz = mov_avg (&moving_avg_5Hz, notch60);
-// 	float hp_5Hz = notch60 - avg_5Hz;
+// 	float hp_5Hz = notch60 - mov_avg (&moving_avg_5Hz, notch60);
 
-// 	// Absolute value, in case QRS is inverted
-//     if(hp_5Hz > 0)
-//         hp_5Hz = hp_5Hz;
-//     else 
-//         hp_5Hz = -hp_5Hz;
     
-//     float abs_val = hp_5Hz;
+//     float abs_val = fabs(hp_5Hz);
 
 //     //analogWrite (A4, abs_val);	// Debug output.
 // 	// // Triangle-filter template match. The triangle is 20ms on each side,
@@ -341,50 +327,33 @@
 // 	// // Threshold computation: get the average & max of lp35 over
 // 	// // the last 2 cycles
 //     float thresh_2s_avg = mov_avg (&moving_avg_thresh_2sec, lp35);
-
-//     float thresh_2s_max = mov_max(&moving_thresh_max, lp35);
-
-//     float pulse_amp = thresh_2s_max - thresh_2s_avg;
-//     float thresh = thresh_2s_avg + 0.35f * pulse_amp;
+//     //float thresh_2s_avg = 0;
+//     float thresh_2s_max = mov_max(&moving_thresh_max, lp35);  
+//     //float thresh_2s_max = 0;
+//     float thresh = (thresh_2s_max + thresh_2s_avg) / 2;
+//     //float thresh = 0;
 
 // 	// Add a lockout so we get one-cycle pulses. Lock for .25 sec, or
 // 	// 125 cycles
 //     if (lock_count > 0) {
 //         --lock_count;
-//     } else {
-//         // Rising-edge detection of threshold crossing
-//         if (lp35 > thresh && lp35_prev <= thresh) {
-
-//             lock_count = 125;   // 250 ms refractory @ 500 Hz
-
-//             // === HEART RATE COMPUTATION ===
-//             uint32_t current_beat = i;               // i is already your sample index
-//             uint32_t deltaN = current_beat - last_beat_sample;
-
-//             if (deltaN > 0) {
-//                 bpm = (60.0f * F_SAMP) / deltaN;
-
-//                 // Physiological clamp
-//                 if (bpm >= 30.0f && bpm <= 220.0f) {
-//                     bpm_filt = 0.9f * bpm_filt + 0.1f * bpm;
-//                 }
-//             }
-
-//             last_beat_sample = current_beat;
+//     }
+//     else {
+//         if (lp35 >= thresh){
+//             lock_count = 125;
 //         }
 //     }
-//     lp35_prev = lp35;
 
-//     // if (lock_count==125)
-//     //     digitalWrite (D6, 1);
-//     // if (lock_count==115)
-//     //     digitalWrite (D6, 0);
+//     if (lock_count==125)
+//         test = 1;
+//     if (lock_count==115)
+//         test = 0;
+//     //lp35_prev = lp35;
 //     LOG(sample<<'\t'<< notch60 <<'\t'<< hp_5Hz << '\t' << abs_val <<'\t'
 //         << ttm <<'\t'<< lp35 << '\t'
 //         << thresh_2s_avg << '\t' << thresh_2s_max << '\t'
-//         << thresh << '\t' << lock_count << '\t'
-//         << bpm_filt);
-
+//         << thresh << '\t' << lock_count<< '\t'
+//         << bpm_filt << '\t' << test);
 //     }
 //     return (0);
 // }

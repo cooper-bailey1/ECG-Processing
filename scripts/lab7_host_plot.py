@@ -1,12 +1,32 @@
+# This is the Python plotting software for host-based debugging.
+# How to use it:
+#     -	First, compile/run lab7_host_main.cxx, redirecting the output to a file
+#	run.out. Run.out will start with a header line that lists the variables
+#	you traced. Then it has one line per timepoint, with each line
+#	containing a list of variable values at that time.
+#     -	Run "python lab7_host_plot.py" to generate plots. Some nice features:
+#	* Each run generates a Python Matplotlib plot, so you can use the usual
+#	  methods to zoom/pan within the plot and/or save it.
+#	* The function plot_what_you_want() has calls to plot_signal(). This
+#	  lets you plot any subset of the signals that you traced. You can also
+#	  translate/scale each signal independently. The translation lets you,
+#	  e.g., align different signals vertically for easier viewing; the
+#	  scaling lets you, e.g., scale a Boolean variable so that it's 0-or-1
+#	  range is visible on the same graph as an ECG signal with a range of
+#	  0 through 4095.
+#	* You can add the y=0 horizontal axis if desired, for ease of viewing.
+#	  Do this inside plot_what_you_want() also.
+
+import re, numpy as np, matplotlib.pyplot as plt
 #import pdb; pdb.set_trace()
 
 # Globals used to build a data structure.
 #   * signal_names[] is a list of the names from line #1 of the main input
 #     file.
 #   * values[] is a list of numpy arrays; one array for each signal. So
-signal_names=[]         # List of the signals we traced, grabbed from line 1
+signal_names=[]		# List of the signals we traced, grabbed from line 1
                         # of the input file
-values=None             # List of np arrays, one array per signal.
+values=None		# List of np arrays, one array per signal.
 
 # Parse the input file.
 # - Read 'filename' (which should be a file of dumped signal values from
@@ -48,9 +68,10 @@ def plot_what_you_want():
     print("plotting...")
 
     #plot_signal("sample", 1, -2000)
-    #plot_signal("lp35")
+    plot_signal("lp35")
     plot_signal("thresh")
     #plot_signal("notch60")
+    #plot_signal("hp_5Hz")
     #plot_signal("ttm")
     #plot_signal("abs_val")
 

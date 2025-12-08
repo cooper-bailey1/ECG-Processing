@@ -83,8 +83,8 @@ void analogWriteFromFile (enum Pin pin) {
 //	parameter. Instead, you define ANALOG_READ_FILENAME and it returns
 //	successive integers from that file. When it gets to the end, it loops
 //	back around again.
-#define ANALOG_READ_FILENAME "kalan_canned_ecg.txt"
-//#define ANALOG_READ_FILENAME "example_ecg.txt"
+//#define ANALOG_READ_FILENAME "example_2_ecg.txt"
+#define ANALOG_READ_FILENAME "example_ecg.txt"
 static unsigned short int analogRead_data[] = {
 #include ANALOG_READ_FILENAME
 };
